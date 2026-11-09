@@ -1,0 +1,40 @@
+/* City Lights palette, used as a single dark theme. Lifted from Chapter Summaries.html. */
+:root {
+  --bg: #1d252c;
+  --bg-deep: #171d23;
+  --surface: #222c35;
+  --line: #2c3a46;
+  /* Raised from #718ca1 (4.4:1) so muted text passes WCAG AA on --bg and --surface. */
+  --muted: #7e98ad;
+  --fg: #b7c5d3;
+  --fg-strong: #dfe8f0;
+  --blue: #5ec4ff;
+  --cyan: #70e1e8;
+  --green: #8bd49c;
+  --yellow: #ebbf83;
+  --orange: #d98e48;
+  --red: #e27e8d;
+
+  /* Chart roles. Demand/supply/price pairs validated for colour-blind separation on --bg. */
+  --chart-demand: var(--blue);
+  --chart-supply: var(--red);
+  --chart-price: var(--yellow);
+  --chart-surplus: var(--green);
+  --chart-grid: var(--line);
+
+  --font-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Literata", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+
+  --step--1: 0.85rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3rem;
+  --step-2: 1.65rem;
+  --step-3: 2.2rem;
+
+  color-scheme: dark;
+}
+
+@media (max-width: 860px) {
+  :root { --step-3: 1.8rem; --step-2: 1.45rem; --step-0: 1.02rem; }
+}

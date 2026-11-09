@@ -6,6 +6,7 @@ import { areaRects, stepValueAt, valueAt } from './chartMath';
 import { useWidth } from './useWidth';
 
 const M = { top: 18, right: 12, bottom: 46, left: 68 };
+const TIP_W = 180;
 
 type Schedules = Record<string, Pick<Schedule, 'steps'>>;
 
@@ -17,6 +18,7 @@ function curvePath(steps: Step[], curve: Curve, x: (n: number) => number, y: (n:
     if (curve.role === 'demand') d += `V${y(0)}`;
     return d;
   }
+  if (curve.shape === 'points') return '';
   const pts = [...(curve.points ?? [])].sort((a, b) => a[0] - b[0]);
   const gen = line<Point>().x((p) => x(p[0])).y((p) => y(p[1]));
   if (curve.shape === 'smooth') gen.curve(curveMonotoneX);
@@ -80,12 +82,15 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
       : curves
           .filter((c) => !c.ghost)
           .map((c) => {
-            const v = c.shape === 'steps' ? stepValueAt(stepsFor(c), hoverX) : valueAt(c.points ?? [], hoverX);
+            // Unconnected points only have a value right at a point.
+            const near = c.points?.find((p) => Math.abs(p[0] - hoverX) <= (x1 - x0) / 40);
+            const v = c.shape === 'steps' ? stepValueAt(stepsFor(c), hoverX) : c.shape === 'points' ? near?.[1] ?? null : valueAt(c.points ?? [], hoverX);
             return { c, v };
           })
           .filter((r): r is { c: Curve; v: number } => r.v !== null);
   const tipLeft = hoverX === null ? 0 : x(hoverX);
-  const tipFlip = tipLeft > width * 0.6;
+  // Show the tip on the left of the crosshair once it would run past the right edge (TIP_W is its widest likely size).
+  const tipFlip = tipLeft > Math.min(width * 0.6, width - TIP_W);
 
   return (
     <div ref={ref} className="xy">

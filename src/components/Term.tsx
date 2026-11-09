@@ -38,7 +38,7 @@ export function Term({ text }: { text: RichText }) {
     };
   }, [open]);
 
-  // Keep the popover inside the viewport on narrow screens.
+  // Keep the popover inside the viewport on narrow screens (moved with `left`, so it never widens the page).
   useLayoutEffect(() => {
     if (!open || !pop.current) return setShift(0);
     const { left, right } = pop.current.getBoundingClientRect();
@@ -72,7 +72,7 @@ export function Term({ text }: { text: RichText }) {
         <Rich text={text} />
       </button>
       {open && (
-        <span ref={pop} id={id} className="term-pop" role="group" aria-label={entry.term} style={{ transform: `translateX(${shift}px)` }}>
+        <span ref={pop} id={id} className="term-pop" role="group" aria-label={entry.term} style={{ left: shift }}>
           <span className="term-pop-title">{entry.term}</span>
           <Rich text={entry.definition} />
           <Link className="term-pop-link" to={`/${outline.id}/glossary/${entry.id}`}>Glossary →</Link>

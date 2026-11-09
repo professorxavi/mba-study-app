@@ -20,6 +20,8 @@ function Breadcrumb() {
   );
 }
 
+const INPUT = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+
 /** Scroll to the URL's #section (or a highlighted glossary term) once the page has rendered; otherwise to the top. */
 function useScrollToTarget() {
   const { pathname, hash, key } = useLocation();
@@ -27,8 +29,21 @@ function useScrollToTarget() {
   const target = hash ? decodeURIComponent(hash.slice(1)) : params.termId ? `g-${params.termId}` : '';
   useEffect(() => {
     const el = target ? document.getElementById(target) : null;
-    if (el) el.scrollIntoView();
-    else window.scrollTo(0, 0);
+    if (!el) return void window.scrollTo(0, 0);
+    const jump = () => el.scrollIntoView({ behavior: 'instant' });
+    jump();
+    // Charts above the target settle their height after measuring their width; keep the target in view
+    // while that happens, until the reader scrolls on their own.
+    const page = new ResizeObserver(jump);
+    page.observe(document.body);
+    const stop = () => {
+      page.disconnect();
+      clearTimeout(timer);
+      for (const type of INPUT) window.removeEventListener(type, stop);
+    };
+    const timer = setTimeout(stop, 1500);
+    for (const type of INPUT) window.addEventListener(type, stop, { passive: true });
+    return stop;
   }, [pathname, target, key]);
 }
 

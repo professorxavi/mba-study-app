@@ -11,7 +11,7 @@ function List({ list }: { list: ListBlock }) {
       <li key={i}><Rich text={item.text} /><List list={item.sub} /></li>
     ),
   );
-  return list.ordered ? <ol>{items}</ol> : <ul>{items}</ul>;
+  return list.ordered ? <ol start={list.start}>{items}</ol> : <ul>{items}</ul>;
 }
 
 export function Block({ block }: { block: BlockData }) {

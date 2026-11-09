@@ -41,10 +41,16 @@ export function termMarks(b: Block): Rich[] {
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-/** Resolves a {"term"} mark to its glossary entry by its text (term or alias, case-insensitive). */
+/** Texts that refer to a glossary entry: its term, its aliases, and the term without a trailing "(WTP)"-style note. */
+export function glossaryKeys(g: GlossaryEntry): string[] {
+  const bare = g.term.replace(/\s*\([^)]*\)\s*$/, '');
+  return [...new Set([g.term, bare, ...(g.aliases ?? [])].map(norm))];
+}
+
+/** Resolves a {"term"} mark to its glossary entry by its text (see glossaryKeys; case-insensitive). */
 export function glossaryLookup(entries: GlossaryEntry[]): (mark: Rich) => GlossaryEntry | undefined {
   const byKey = new Map<string, GlossaryEntry>();
-  for (const g of entries) for (const k of [g.term, ...(g.aliases ?? [])]) byKey.set(norm(k), g);
+  for (const g of entries) for (const k of glossaryKeys(g)) byKey.set(k, g);
   return (mark) => byKey.get(norm(plainText(mark)));
 }
 

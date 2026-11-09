@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Chapter, ChartData } from './types';
-import { buildAppearsIn } from './model';
+import { buildAppearsIn, glossaryLookup } from './model';
 import { validateClass, type ClassBundle } from './validate';
 
 // A small made-up class: course content itself lives in Firestore, never in the repo.
@@ -77,6 +77,16 @@ describe('validateClass', () => {
     const errors = validateClass(c);
     expect(errors).toContain('glossary/gizmo: never marked in any lesson');
     expect(errors).toContain('credits[0]: usedIn names unknown lesson "9/9"');
+  });
+});
+
+describe('glossary lookup', () => {
+  it('matches a term without its trailing parenthetical, plus aliases, ignoring case', () => {
+    const lookup = glossaryLookup([{ id: 'wtp', term: 'Willingness to pay (WTP)', aliases: ['max WTP'], definition: 'x' }]);
+    expect(lookup('willingness to pay')?.id).toBe('wtp');
+    expect(lookup('Willingness to Pay (WTP)')?.id).toBe('wtp');
+    expect(lookup('MAX wtp')?.id).toBe('wtp');
+    expect(lookup('pay')).toBeUndefined();
   });
 });
 

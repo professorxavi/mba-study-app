@@ -1,0 +1,56 @@
+# Tests and builds every push and PR. With the Firebase secrets set (see below), main deploys to Firebase Hosting
+# and each PR gets a preview channel. This workflow never touches Firestore content.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID
+#   FIREBASE_SERVICE_ACCOUNT  JSON key of a service account with the "Firebase Hosting Admin" role only
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      CAN_DEPLOY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.VITE_FIREBASE_PROJECT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm build
+
+      - name: Deploy to Firebase Hosting (live)
+        if: env.CAN_DEPLOY == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          channelId: live
+
+      - name: Deploy PR preview channel
+        if: env.CAN_DEPLOY == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}

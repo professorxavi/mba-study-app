@@ -13,6 +13,8 @@ export type ListItem = Rich | { text: Rich; sub: ListBlock };
 export interface ListBlock {
   type: 'list';
   ordered?: boolean;
+  /** First number of an ordered list that continues an earlier one. */
+  start?: number;
   items: ListItem[];
 }
 
@@ -83,8 +85,8 @@ export interface Curve {
   id: string;
   label: string;
   role: 'demand' | 'supply';
-  /** steps: staircase from a named schedule; line/smooth: through `points`. */
-  shape: 'steps' | 'line' | 'smooth';
+  /** steps: staircase from a named schedule; line/smooth: through `points`; points: the `points` alone, unconnected. */
+  shape: 'steps' | 'line' | 'smooth' | 'points';
   /** Key into ChartData.schedules (for shape 'steps'). */
   schedule?: string;
   points?: Point[];

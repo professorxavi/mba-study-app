@@ -203,3 +203,33 @@ h4 { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; col
 .box .example-label { color: var(--cyan); }
 /* Answer options ("a) …") under an exercise question carry their own labels. */
 .box li > ul { list-style: none; padding-left: 0.4rem; }
+
+/* ---------- Quiz ---------- */
+.quiz-setup { display: grid; gap: 1rem; justify-items: start; margin-top: 1.5rem; font-family: var(--font-display); }
+.quiz-count { display: grid; gap: 0.4rem; width: min(100%, 24rem); color: var(--fg); }
+.quiz-count input[type="range"] { width: 100%; accent-color: var(--blue); }
+.quiz-card { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.quiz-card fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.quiz-progress { margin: 0 0 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+.quiz-prompt { padding: 0; margin-bottom: 1rem; color: var(--fg-strong); font-size: var(--step-0); line-height: 1.6; }
+.quiz-options { display: grid; gap: 0.5rem; }
+.quiz-option {
+  display: flex; gap: 0.6rem; align-items: center;
+  padding: 0.65rem 0.85rem; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); font-family: var(--font-display); color: var(--fg-strong); cursor: pointer;
+}
+.quiz-option:hover { border-color: var(--muted); }
+.quiz-option.chosen { border-color: var(--blue); }
+.quiz-option input { accent-color: var(--blue); margin: 0; }
+.quiz-option.correct { border-color: var(--green); box-shadow: inset 3px 0 0 var(--green); }
+.quiz-option.wrong { border-color: var(--red); box-shadow: inset 3px 0 0 var(--red); }
+.quiz-option.correct span::after { content: " ✓ correct"; color: var(--green); font-size: 0.85em; }
+.quiz-option.wrong span::after { content: " ✗ your answer"; color: var(--red); font-size: 0.85em; }
+.quiz-option:has(input:disabled) { cursor: default; }
+.quiz-feedback { min-height: 1.5rem; margin: 0.75rem 0; font-family: var(--font-display); }
+.quiz-feedback p { margin: 0.25rem 0; }
+.quiz-feedback .good { color: var(--green); }
+.quiz-feedback .bad { color: var(--fg-strong); }
+.quiz-feedback strong { color: var(--green); }
+.quiz-results { margin-top: 1.5rem; }
+.quiz-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }

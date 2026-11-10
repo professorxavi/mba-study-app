@@ -9,6 +9,7 @@ import { GlossaryView } from './views/GlossaryView';
 import { HomeView } from './views/HomeView';
 import { Layout } from './views/Layout';
 import { LessonLayout } from './views/LessonLayout';
+import { QuizView } from './views/QuizView';
 import { ReadingView } from './views/ReadingView';
 import { SummaryView } from './views/SummaryView';
 
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
                     loader: ({ params }) => getReading(params.classId!, params.moduleId!, params.lessonId!),
                   },
                   { path: 'glossary', element: <GlossaryView scope="lesson" /> },
+                  { path: 'quiz', element: <QuizView /> },
                 ],
               },
             ],

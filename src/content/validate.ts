@@ -1,8 +1,9 @@
 // Content validation, run by the content scripts before anything is written to Firestore (and by tests on fixtures).
+import katex from 'katex';
 import { buildAppearsIn, glossaryLookup, plainText, termMarks, type LessonContent } from './model.ts';
 import { INLINE_KINDS, type Block, type Chapter, type ChartData, type ClassOutline, type Credit, type GlossaryEntry, type Rich } from './types.ts';
 
-const BLOCK_TYPES = new Set(['p', 'list', 'example', 'table', 'quote', 'chart', 'h', 'figure', 'box']);
+const BLOCK_TYPES = new Set(['p', 'list', 'example', 'table', 'quote', 'chart', 'h', 'figure', 'box', 'equation']);
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 /** Class-level page names that a module id would collide with in URLs. */
 const RESERVED = new Set(['glossary', 'credits']);
@@ -49,6 +50,13 @@ function checkBlock(b: Block, where: string, chartIds: Set<string>, errors: stri
       return b.charts.forEach((id) => {
         if (!chartIds.has(id)) errors.push(`${where}: unknown chart "${id}"`);
       });
+    case 'equation':
+      try {
+        katex.renderToString(b.tex, { displayMode: true, throwOnError: true });
+      } catch (e) {
+        errors.push(`${where}: equation does not parse: ${(e as Error).message}`);
+      }
+      return;
   }
 }
 

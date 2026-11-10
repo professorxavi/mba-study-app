@@ -24,9 +24,13 @@ figure.chart { margin: 1.5rem 0 1.75rem; }
 .chart .curve { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .chart .curve.demand { stroke: var(--chart-demand); }
 .chart .curve.supply { stroke: var(--chart-supply); }
+.chart .curve.series-1 { stroke: var(--chart-series-1); }
+.chart .curve.series-2 { stroke: var(--chart-series-2); stroke-dasharray: 6 4; }
 .chart .dot { stroke: var(--chart-halo, var(--bg)); stroke-width: 2; }
 .chart .dot.demand { fill: var(--chart-demand); }
 .chart .dot.supply { fill: var(--chart-supply); }
+.chart .dot.series-1 { fill: var(--chart-series-1); }
+.chart .dot.series-2 { fill: var(--chart-series-2); }
 .chart .guide { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.6; }
 
 .chart .price-line { stroke: var(--chart-price); stroke-width: 2; }
@@ -67,6 +71,8 @@ figure.chart { margin: 1.5rem 0 1.75rem; }
 .chart-legend span::before { content: ""; display: inline-block; width: 1rem; height: 2px; vertical-align: middle; margin-right: 0.4rem; }
 .chart-legend .demand::before { background: var(--chart-demand); }
 .chart-legend .supply::before { background: var(--chart-supply); }
+.chart-legend .series-1::before { background: var(--chart-series-1); }
+.chart-legend .series-2::before { background: repeating-linear-gradient(90deg, var(--chart-series-2) 0 6px, transparent 6px 9px); }
 
 /* Halo keeps direct labels legible where they cross lines or fills. */
 .chart .label, .flow .arc-label { paint-order: stroke; stroke: var(--chart-halo, var(--bg)); stroke-width: 4px; stroke-linejoin: round; }

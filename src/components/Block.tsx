@@ -1,6 +1,7 @@
 import type { Block as BlockData, ListBlock } from '../content/types';
 import { ChartFigure } from '../charts/ChartFigure';
 import { DataTable } from './DataTable';
+import { Equation } from './Equation';
 import { Rich } from './Inline';
 
 function List({ list }: { list: ListBlock }) {
@@ -53,5 +54,7 @@ export function Block({ block }: { block: BlockData }) {
           {block.blocks.map((b, i) => <Block key={i} block={b} />)}
         </aside>
       );
+    case 'equation':
+      return <Equation tex={block.tex} />;
   }
 }

@@ -42,7 +42,9 @@ export type Block =
   /** A book figure that is a photo or diagram: shown as its label and caption only. */
   | { type: 'figure'; label: string; caption: Rich }
   /** A callout box from the book, e.g. learning objectives or "Clear It Up". */
-  | { type: 'box'; label: string; blocks: Block[] };
+  | { type: 'box'; label: string; blocks: Block[] }
+  /** A display equation, written in TeX (rendered with KaTeX). */
+  | { type: 'equation'; tex: string };
 
 export interface Section {
   id: string;
@@ -84,7 +86,8 @@ export interface Step {
 export interface Curve {
   id: string;
   label: string;
-  role: 'demand' | 'supply';
+  /** demand/supply for market curves; series-1/series-2 for other data (e.g. a price history). */
+  role: 'demand' | 'supply' | 'series-1' | 'series-2';
   /** steps: staircase from a named schedule; line/smooth: through `points`; points: the `points` alone, unconnected. */
   shape: 'steps' | 'line' | 'smooth' | 'points';
   /** Key into ChartData.schedules (for shape 'steps'). */
@@ -174,6 +177,12 @@ export interface ChartSpec {
   xDomain?: [number, number];
   yDomain?: [number, number];
   yPrefix?: string;
+  /** Decimal places on y values (default 2). Values of 1,000 and up get thousands separators when set. */
+  yDecimals?: number;
+  /** How x values read: as quantities (default), as years, or as decimal years with month ticks and dated readouts (2005.5 = Jul 1, 2005). */
+  xFormat?: 'quantity' | 'year' | 'month';
+  /** Name of the x variable in the hover readout for quantity axes (default "Q"). */
+  xName?: string;
   curves?: Curve[];
   priceLines?: PriceLine[];
   areas?: Area[];

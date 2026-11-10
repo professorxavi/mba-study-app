@@ -113,6 +113,8 @@ ul, ol { margin: 0 0 1.25rem; padding-left: 1.3rem; }
 li { margin: 0.4rem 0; }
 li::marker { color: var(--muted); }
 li ul, li ol { margin: 0.3rem 0 0.3rem; }
+/* Parts of a numbered question (a., b., c.). */
+li > ol { list-style-type: lower-alpha; }
 
 strong { color: var(--fg-strong); font-weight: 600; }
 em { color: var(--fg-strong); }

@@ -20,6 +20,7 @@
   "dependencies": {
     "d3": "^7.9.0",
     "firebase": "13.1.0",
+    "katex": "0.19.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router": "7.18.5"

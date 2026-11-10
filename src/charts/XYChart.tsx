@@ -1,4 +1,4 @@
-import { useId, useState, type PointerEvent } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import { curveMonotoneX, line, scaleLinear } from 'd3';
 import { useLessonScope } from '../content/context';
 import type { ChartSpec, Curve, Point, Schedule, Step } from '../content/types';
@@ -6,7 +6,6 @@ import { areaRects, stepValueAt, valueAt } from './chartMath';
 import { useWidth } from './useWidth';
 
 const M = { top: 18, right: 12, bottom: 46, left: 68 };
-const TIP_W = 180;
 
 type Schedules = Record<string, Pick<Schedule, 'steps'>>;
 
@@ -23,6 +22,30 @@ function curvePath(steps: Step[], curve: Curve, x: (n: number) => number, y: (n:
   const gen = line<Point>().x((p) => x(p[0])).y((p) => y(p[1]));
   if (curve.shape === 'smooth') gen.curve(curveMonotoneX);
   return gen(pts) ?? '';
+}
+
+/** A decimal year (2005.5) as "Jul 2005". */
+function monthLabel(v: number): string {
+  const months = Math.round(v * 12);
+  return new Date(Date.UTC(Math.floor(months / 12), months % 12)).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+/** A decimal year as a date, e.g. "Jan 3, 2006" (a month counts as 30.5 days, matching the data's encoding). */
+function dayLabel(v: number): string {
+  const months = v * 12;
+  const m = Math.floor(months + 1e-9);
+  const day = 1 + Math.round((months - m) * 30.5);
+  return new Date(Date.UTC(Math.floor(m / 12), m % 12, day)).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+/** Ticks on whole months, spaced so there are at most `count` of them. */
+function monthTicks(x0: number, x1: number, count: number): number[] {
+  const first = Math.ceil(x0 * 12 - 1e-6);
+  const last = Math.floor(x1 * 12 + 1e-6);
+  const step = [1, 2, 3, 4, 6, 12].find((s) => (last - first) / s < count) ?? 12;
+  const out: number[] = [];
+  for (let m = first; m <= last; m += step) out.push(m / 12);
+  return out;
 }
 
 function dotsFor(steps: Step[], curve: Curve): Point[] {
@@ -53,9 +76,15 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
   const x = scaleLinear().domain([x0, x1]).range([M.left, width - M.right]);
   const y = scaleLinear().domain([y0, y1]).range([height - M.bottom, M.top]);
   const prefix = spec.yPrefix ?? '';
-  const fmtY = (v: number) => `${prefix}${v.toFixed(2)}`;
+  const decimals = spec.yDecimals;
+  const fmtY = (v: number) =>
+    `${prefix}${decimals === undefined ? v.toFixed(2) : v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+  const xFormat = spec.xFormat ?? 'quantity';
   const fmtX = (v: number) => (x1 - x0 > 60 ? Math.round(v) : Math.round(v * 10) / 10).toLocaleString();
-  const xTicks = x.ticks(width < 420 ? 4 : 6);
+  const tickCount = width < 420 ? 4 : 6;
+  const xTicks = xFormat === 'month' ? monthTicks(x0, x1, tickCount) : x.ticks(tickCount);
+  const fmtTick = (t: number) => (xFormat === 'month' ? monthLabel(t) : xFormat === 'year' ? String(Math.round(t)) : t.toLocaleString());
+  const tipX = (v: number) => (xFormat === 'month' ? dayLabel(v) : xFormat === 'year' ? String(Math.round(v)) : `${spec.xName ?? 'Q'} = ${fmtX(v)}`);
   const yTicks = y.ticks(height < 300 ? 5 : 7);
   const curves = spec.curves ?? [];
   const curveById = new Map(curves.map((c) => [c.id, c]));
@@ -89,8 +118,15 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
           })
           .filter((r): r is { c: Curve; v: number } => r.v !== null);
   const tipLeft = hoverX === null ? 0 : x(hoverX);
-  // Show the tip on the left of the crosshair once it would run past the right edge (TIP_W is its widest likely size).
-  const tipFlip = tipLeft > Math.min(width * 0.6, width - TIP_W);
+  const tipRef = useRef<HTMLDivElement>(null);
+  // Place the tip right of the crosshair if it fits, otherwise left of it, and always inside the chart.
+  useLayoutEffect(() => {
+    const tip = tipRef.current;
+    if (!tip) return;
+    const w = tip.offsetWidth;
+    const left = tipLeft + 10 + w > width ? tipLeft - 10 - w : tipLeft + 10;
+    tip.style.left = `${Math.max(0, Math.min(left, width - w))}px`;
+  });
 
   return (
     <div ref={ref} className="xy">
@@ -132,7 +168,7 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
             <line x1={M.left} x2={width - M.right} y1={y(y0)} y2={y(y0)} />
             <line x1={M.left} x2={M.left} y1={y(y0)} y2={y(y1)} />
             {xTicks.map((t) => (
-              <text key={t} x={x(t)} y={y(y0) + 16} textAnchor="middle">{t.toLocaleString()}</text>
+              <text key={t} x={x(t)} y={y(y0) + 16} textAnchor="middle">{fmtTick(t)}</text>
             ))}
             {yTicks.map((t) => (
               <text key={t} x={M.left - 6} y={y(t)} dy="0.32em" textAnchor="end">{fmtY(t)}</text>
@@ -210,8 +246,8 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
         </svg>
 
         {hoverX !== null && !dragging && (
-          <div className={`chart-tip${tipFlip ? ' flip' : ''}`} style={{ left: tipLeft, top: M.top }} aria-hidden="true">
-            <span className="tip-q">Q = {fmtX(hoverX)}</span>
+          <div ref={tipRef} className="chart-tip" style={{ left: tipLeft + 10, top: M.top }} aria-hidden="true">
+            <span className="tip-q">{tipX(hoverX)}</span>
             {readings.length === 0 && <span className="tip-row">No curve here</span>}
             {readings.map(({ c, v }) => (
               <span key={c.id} className={`tip-row ${c.role}`}>

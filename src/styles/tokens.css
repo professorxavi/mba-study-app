@@ -21,6 +21,9 @@
   --chart-price: var(--yellow);
   --chart-surplus: var(--green);
   --chart-grid: var(--line);
+  /* Non-market data series (e.g. price histories); series 2 is also dashed. */
+  --chart-series-1: var(--green);
+  --chart-series-2: var(--orange);
 
   --font-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-body: "Literata", Georgia, "Times New Roman", serif;

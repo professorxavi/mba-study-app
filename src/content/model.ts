@@ -10,7 +10,8 @@ export function plainText(r: Rich): string {
 /** Every {"term"} mark in a block tree. */
 export function termMarks(b: Block): Rich[] {
   const fromRich = (r: Rich): Rich[] =>
-    typeof r === 'string'
+    // Malformed rich text (not a string or array) has no marks; validateClass reports it.
+    typeof r === 'string' || !Array.isArray(r)
       ? []
       : r.flatMap((p) => {
           if (typeof p === 'string') return [];

@@ -50,6 +50,21 @@ describe('validateClass', () => {
     expect(errors.some((e) => e.includes('unknown block type "video"'))).toBe(true);
   });
 
+  it('reports rich text that is a bare object instead of crashing', () => {
+    const c = fixture();
+    c.lessons[0].summary.chapters[0].sections[0].blocks.push({ type: 'p', text: { strong: 'x' } as never });
+    expect(validateClass(c).some((e) => e.includes('rich text must be a string or array'))).toBe(true);
+  });
+
+  it('accepts TeX that KaTeX can render and rejects TeX it cannot', () => {
+    const c = fixture();
+    const blocks = c.lessons[0].reading[0].sections[0].blocks;
+    blocks.push({ type: 'equation', tex: 'PV = \\frac{PPP}{(1+i)^t}' });
+    expect(validateClass(c)).toEqual([]);
+    blocks.push({ type: 'equation', tex: '\\frac{PPP' });
+    expect(validateClass(c).some((e) => e.includes('equation does not parse'))).toBe(true);
+  });
+
   it('requires class.json and the lesson folders to match', () => {
     const c = fixture();
     c.lessonFolders = ['1/1', '1/2'];

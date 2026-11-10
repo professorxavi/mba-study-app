@@ -163,9 +163,44 @@ export interface FlowSpec {
 
 export type Provenance = 'text' | 'derived' | 'read-from-image';
 
+/** 100% stacked horizontal bars: each bar splits a whole into the same parts (e.g. time on strategy vs other work). */
+export interface ShareSpec {
+  /** The parts, in stacking order; colored series-1, series-2, … */
+  parts: string[];
+  bars: { label: string; values: number[] }[];
+  /** Appended to values, e.g. "%". */
+  unit?: string;
+  /** Text alternative for screen readers. */
+  description: string;
+}
+
+/** Labeled bubbles on two qualitative axes (low → high), e.g. a strategic group map. Coordinates run 0–10. */
+export interface ScatterSpec {
+  xTicks: [low: string, high: string];
+  yTicks: [low: string, high: string];
+  points: { label: string; x: number; y: number; /** Radius in axis units (an ellipse on non-square plots), as drawn. */ r: number }[];
+  description: string;
+}
+
+/** A 2×2 framework grid. Rows run top to bottom; axis ticks run low → high (left → right, bottom → top). */
+export interface MatrixSpec {
+  xTicks?: [left: string, right: string];
+  yTicks?: [bottom: string, top: string];
+  cells: [[MatrixCell, MatrixCell], [MatrixCell, MatrixCell]];
+  /** Text placed over the middle of the grid (e.g. hybrid strategies). */
+  center?: string;
+  description: string;
+}
+
+export interface MatrixCell {
+  text: string;
+  /** Colors the cell as a go / no-go signal; omit for neutral. */
+  tone?: 'good' | 'bad' | 'caution';
+}
+
 export interface ChartSpec {
   id: string;
-  kind: 'xy' | 'circular-flow';
+  kind: 'xy' | 'circular-flow' | 'share' | 'scatter' | 'matrix';
   title: string;
   figure: string;
   source: { pdf: string; page: number };
@@ -191,8 +226,17 @@ export interface ChartSpec {
   /** Dashed guide lines from a point to both axes. */
   guides?: Point[];
   labels?: ChartLabel[];
+  /** Names for x = 0, 1, 2, … (a category axis): used as tick labels and in the hover readout. */
+  xCategories?: string[];
+  /** Text ticks in place of numbers on the y axis, e.g. [[0, "Low"], [10, "High"]]. */
+  yTickLabels?: [number, string][];
+  /** false hides the hover readout (for charts traced without real values). */
+  readout?: boolean;
   /** For kind 'circular-flow'. */
   flow?: FlowSpec;
+  share?: ShareSpec;
+  scatter?: ScatterSpec;
+  matrix?: MatrixSpec;
   /** Controls for the reader: drag the active price line, shift curves by id (in x units). */
   interactive?: { price?: { min: number; max: number; step: number }; shift?: { curves: string[]; range: number; step: number } };
 }

@@ -56,6 +56,28 @@ describe('validateClass', () => {
     expect(validateClass(c).some((e) => e.includes('rich text must be a string or array'))).toBe(true);
   });
 
+  it('checks the shape of share, scatter and matrix charts and category axes', () => {
+    const c = fixture();
+    const base = { title: 'T', figure: 'F', source: { pdf: '', page: 0 }, provenance: 'text' as const };
+    c.lessons[0].charts = {
+      ...charts,
+      charts: [
+        ...charts.charts,
+        { ...base, id: 'sh', kind: 'share', share: { parts: ['A', 'B'], unit: '%', description: 'd', bars: [{ label: 'ok', values: [40, 60] }, { label: 'short', values: [40, 50] }, { label: 'one', values: [100] }] } },
+        { ...base, id: 'sc', kind: 'scatter', scatter: { xTicks: ['Low', 'High'], yTicks: ['Low', 'High'], description: 'd', points: [{ label: 'P', x: 11, y: 5, r: 1 }] } },
+        { ...base, id: 'mx', kind: 'matrix', matrix: { description: 'd', cells: [[{ text: 'a' }, { text: 'b' }], [{ text: 'c' }]] as never } },
+        { ...base, id: 'cat', kind: 'xy', xCategories: ['a', 'b'], curves: [{ id: 'L', label: 'L', role: 'series-1', shape: 'line', points: [[0, 1], [2, 3]] }] },
+      ],
+    };
+    const errors = validateClass(c);
+    expect(errors.some((e) => e.includes('bar "short" does not add up to 100%'))).toBe(true);
+    expect(errors.some((e) => e.includes('bar "one" has 1 values for 2 parts'))).toBe(true);
+    expect(errors.some((e) => e.includes('bar "ok"'))).toBe(false);
+    expect(errors.some((e) => e.includes('point "P" is outside 0–10'))).toBe(true);
+    expect(errors.some((e) => e.includes('a matrix chart needs 2×2 "cells"'))).toBe(true);
+    expect(errors.some((e) => e.includes('curve L has x = 2, not a category index (0–1)'))).toBe(true);
+  });
+
   it('accepts TeX that KaTeX can render and rejects TeX it cannot', () => {
     const c = fixture();
     const blocks = c.lessons[0].reading[0].sections[0].blocks;

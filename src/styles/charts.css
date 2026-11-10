@@ -83,3 +83,53 @@ figure.chart { margin: 1.5rem 0 1.75rem; }
   .flow .arc-label { font-size: 16px; }
   .flow .node text { font-size: 18px; }
 }
+
+/* Category axis names (value curves) read as words, not numbers. */
+.chart .axis text.category { font-family: var(--font-display); font-size: 11px; }
+
+/* 100% stacked bars (kind "share") */
+.chart-legend span.block::before { width: 0.75rem; height: 0.75rem; border-radius: 2px; background: none; }
+.chart-legend .series-1.block::before { background: var(--chart-series-1); }
+.chart-legend .series-2.block::before { background: var(--chart-series-2); }
+.share-rows { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
+.share-row { display: grid; grid-template-columns: minmax(7rem, 12rem) 1fr; gap: 0.75rem; align-items: center; }
+.share-label { font-family: var(--font-display); font-size: var(--step--1); color: var(--fg); }
+.share-bar { display: flex; gap: 2px; height: 1.75rem; }
+.share-seg { display: flex; align-items: center; justify-content: center; min-width: 2px; }
+.share-seg:first-child { border-radius: 4px 0 0 4px; }
+.share-seg:last-child { border-radius: 0 4px 4px 0; }
+.share-seg.series-1 { background: var(--chart-series-1); }
+.share-seg.series-2 { background: var(--chart-series-2); }
+.share-value { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; color: var(--bg-deep); }
+@media (max-width: 520px) {
+  .share-row { grid-template-columns: 1fr; gap: 0.2rem; }
+}
+
+/* Labeled bubbles (kind "scatter") */
+.chart .bubble ellipse { fill: var(--chart-series-1); fill-opacity: 0.16; stroke: var(--chart-series-1); stroke-width: 1.5; }
+
+/* 2×2 framework grid (kind "matrix") */
+.matrix { font-family: var(--font-display); }
+.matrix.with-axes { display: grid; grid-template-columns: auto auto 1fr; grid-template-rows: auto auto auto; column-gap: 0.4rem; }
+.matrix-ylabel { grid-column: 1; grid-row: 1; writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; font-size: 12px; color: var(--muted); }
+.matrix-yticks { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: var(--muted); text-align: right; padding: 0.4rem 0; max-width: 5.5rem; }
+.matrix-grid { grid-column: 3; grid-row: 1; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.matrix-xticks { grid-column: 3; grid-row: 2; display: flex; justify-content: space-between; gap: 1rem; font-size: 11px; color: var(--muted); margin-top: 0.3rem; }
+.matrix-xlabel { grid-column: 3; grid-row: 3; text-align: center; font-size: 12px; color: var(--muted); margin-top: 0.2rem; }
+.matrix-cell {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 6rem; padding: 0.75rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--fg-strong); font-size: 0.92rem; font-weight: 600;
+}
+.matrix-cell.good { border-color: var(--green); box-shadow: inset 0 3px 0 var(--green); }
+.matrix-cell.bad { border-color: var(--red); box-shadow: inset 0 3px 0 var(--red); }
+.matrix-cell.caution { border-color: var(--yellow); box-shadow: inset 0 3px 0 var(--yellow); }
+/* Keep cell text clear of the center label. */
+.matrix-grid.has-center .matrix-cell:nth-child(-n+2) { padding-bottom: 1.9rem; }
+.matrix-grid.has-center .matrix-cell:nth-child(n+3) { padding-top: 1.9rem; }
+.matrix-center {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 0.35rem 0.7rem; background: var(--bg-deep); border: 1px solid var(--muted); border-radius: 6px;
+  color: var(--fg-strong); font-size: 0.85rem; font-weight: 600; text-align: center; white-space: nowrap;
+}

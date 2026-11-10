@@ -5,7 +5,7 @@ import type { ChartSpec, Curve, Point, Schedule, Step } from '../content/types';
 import { areaRects, stepValueAt, valueAt } from './chartMath';
 import { useWidth } from './useWidth';
 
-const M = { top: 18, right: 12, bottom: 46, left: 68 };
+const MARGIN = { top: 18, right: 12, bottom: 46, left: 68 };
 
 type Schedules = Record<string, Pick<Schedule, 'steps'>>;
 
@@ -48,6 +48,20 @@ function monthTicks(x0: number, x1: number, count: number): number[] {
   return out;
 }
 
+/** Approximate width of one 11px category-label glyph. */
+const GLYPH = 6.2;
+
+/** Splits a category name into at most two lines that fit roughly `room` pixels. */
+function wrapLabel(text: string, room: number): string[] {
+  const max = Math.max(6, Math.floor(room / GLYPH));
+  if (text.length <= max) return [text];
+  const words = text.split(' ');
+  let first = '';
+  while (words.length && (first + ' ' + words[0]).trim().length <= max) first = (first + ' ' + words.shift()).trim();
+  if (!first) first = words.shift() ?? '';
+  return words.length ? [first, words.join(' ')] : [first];
+}
+
 function dotsFor(steps: Step[], curve: Curve): Point[] {
   if (Array.isArray(curve.dots)) return curve.dots;
   if (!curve.dots) return [];
@@ -70,6 +84,17 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
   const [hoverX, setHoverX] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  const categories = spec.xCategories;
+  // Category names wrap onto two lines under the axis; when a single word is wider than its slot, they are angled instead.
+  const slot = categories ? (width - MARGIN.left - MARGIN.right) / categories.length : 0;
+  const angled = !!categories?.some((c) => c.split(' ').some((w) => w.length * GLYPH > slot - 4));
+  const longest = Math.max(0, ...(categories ?? []).map((c) => c.length));
+  const M = {
+    ...MARGIN,
+    bottom: !categories ? MARGIN.bottom : angled ? 40 + Math.ceil(longest * GLYPH * 0.64) : 70,
+    left: spec.yTickLabels ? 48 : MARGIN.left,
+  };
+  const showReadout = spec.readout !== false;
   const height = Math.round(Math.min(400, Math.max(280, width * 0.72)));
   const [x0, x1] = spec.xDomain ?? [0, 1];
   const [y0, y1] = spec.yDomain ?? [0, 1];
@@ -82,10 +107,11 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
   const xFormat = spec.xFormat ?? 'quantity';
   const fmtX = (v: number) => (x1 - x0 > 60 ? Math.round(v) : Math.round(v * 10) / 10).toLocaleString();
   const tickCount = width < 420 ? 4 : 6;
-  const xTicks = xFormat === 'month' ? monthTicks(x0, x1, tickCount) : x.ticks(tickCount);
+  const xTicks = categories ? categories.map((_, i) => i) : xFormat === 'month' ? monthTicks(x0, x1, tickCount) : x.ticks(tickCount);
   const fmtTick = (t: number) => (xFormat === 'month' ? monthLabel(t) : xFormat === 'year' ? String(Math.round(t)) : t.toLocaleString());
-  const tipX = (v: number) => (xFormat === 'month' ? dayLabel(v) : xFormat === 'year' ? String(Math.round(v)) : `${spec.xName ?? 'Q'} = ${fmtX(v)}`);
-  const yTicks = y.ticks(height < 300 ? 5 : 7);
+  const tipX = (v: number) => (categories ? categories[Math.round(v)] ?? '' : xFormat === 'month' ? dayLabel(v) : xFormat === 'year' ? String(Math.round(v)) : `${spec.xName ?? 'Q'} = ${fmtX(v)}`);
+  const yTicks = spec.yTickLabels ? spec.yTickLabels.map(([v]) => v) : y.ticks(height < 300 ? 5 : 7);
+  const yTickText = (t: number) => spec.yTickLabels?.find(([v]) => v === t)?.[1] ?? fmtY(t);
   const curves = spec.curves ?? [];
   const curveById = new Map(curves.map((c) => [c.id, c]));
   const stepsFor = (c: Curve): Step[] => (c.schedule ? schedules[c.schedule]?.steps ?? [] : []);
@@ -97,7 +123,9 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
   };
   const onHover = (e: PointerEvent<SVGElement>) => {
     const { px } = plotX(e);
-    setHoverX(Math.min(x1, Math.max(x0, x.invert(px))));
+    const v = Math.min(x1, Math.max(x0, x.invert(px)));
+    // On a category axis the readout snaps to the nearest category.
+    setHoverX(categories ? Math.min(categories.length - 1, Math.max(0, Math.round(v))) : v);
   };
   const onDrag = (e: PointerEvent<SVGElement>) => {
     if (!dragging || !onPriceChange) return;
@@ -167,11 +195,21 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
           <g className="axis">
             <line x1={M.left} x2={width - M.right} y1={y(y0)} y2={y(y0)} />
             <line x1={M.left} x2={M.left} y1={y(y0)} y2={y(y1)} />
-            {xTicks.map((t) => (
-              <text key={t} x={x(t)} y={y(y0) + 16} textAnchor="middle">{fmtTick(t)}</text>
-            ))}
+            {xTicks.map((t) =>
+              categories && angled ? (
+                <text key={t} className="category" transform={`translate(${x(t)},${y(y0) + 12}) rotate(-40)`} textAnchor="end" dy="0.32em">{categories[t]}</text>
+              ) : categories ? (
+                <text key={t} className="category" x={x(t)} y={y(y0) + 16} textAnchor="middle">
+                  {wrapLabel(categories[t], (width - M.left - M.right) / categories.length).map((part, i) => (
+                    <tspan key={i} x={x(t)} dy={i ? '1.15em' : 0}>{part}</tspan>
+                  ))}
+                </text>
+              ) : (
+                <text key={t} x={x(t)} y={y(y0) + 16} textAnchor="middle">{fmtTick(t)}</text>
+              ),
+            )}
             {yTicks.map((t) => (
-              <text key={t} x={M.left - 6} y={y(t)} dy="0.32em" textAnchor="end">{fmtY(t)}</text>
+              <text key={t} x={M.left - 6} y={y(t)} dy="0.32em" textAnchor="end">{yTickText(t)}</text>
             ))}
           </g>
           <text className="axis-label" x={(M.left + width - M.right) / 2} y={height - 6} textAnchor="middle">{spec.xLabel}</text>
@@ -215,7 +253,7 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
           {hoverX !== null && <line className="crosshair" x1={x(hoverX)} x2={x(hoverX)} y1={M.top} y2={y(y0)} />}
 
           {/* Hit layer for the hover readout, sized to the plot area. */}
-          <rect
+          {showReadout && <rect
             className="hit"
             x={M.left}
             y={M.top}
@@ -224,7 +262,7 @@ export function XYChart({ spec, schedules: given, onPriceChange }: Props) {
             onPointerMove={onHover}
             onPointerDown={onHover}
             onPointerLeave={(e) => e.pointerType !== 'touch' && setHoverX(null)}
-          />
+          />}
 
           {onPriceChange && active && (
             <line

@@ -1,7 +1,7 @@
 // Content validation, run by the content scripts before anything is written to Firestore (and by tests on fixtures).
 import katex from 'katex';
 import { buildAppearsIn, glossaryLookup, plainText, termMarks, type LessonContent } from './model.ts';
-import { INLINE_KINDS, type Block, type Chapter, type ChartData, type ClassOutline, type Credit, type GlossaryEntry, type Rich } from './types.ts';
+import { INLINE_KINDS, type Block, type Chapter, type ChartData, type ChartSpec, type ClassOutline, type Credit, type GlossaryEntry, type Rich } from './types.ts';
 
 const BLOCK_TYPES = new Set(['p', 'list', 'example', 'table', 'quote', 'chart', 'h', 'figure', 'box', 'equation']);
 const ID = /^[a-z0-9][a-z0-9-]*$/;
@@ -82,6 +82,7 @@ function checkCharts(data: ChartData, where: string, errors: string[]): void {
     if (ids.has(chart.id)) errors.push(`${where}: duplicate chart id "${chart.id}"`);
     ids.add(chart.id);
     if (chart.kind === 'circular-flow' && !chart.flow) errors.push(`${where}/${chart.id}: a circular-flow chart needs "flow"`);
+    checkKind(chart, `${where}/${chart.id}`, errors);
     const curveIds = new Set((chart.curves ?? []).map((cv) => cv.id));
     for (const curve of chart.curves ?? []) {
       if (curve.shape === 'steps' && !(curve.schedule && data.schedules[curve.schedule])) {
@@ -95,6 +96,33 @@ function checkCharts(data: ChartData, where: string, errors: string[]): void {
     }
     for (const id of chart.interactive?.shift?.curves ?? []) {
       if (!curveIds.has(id)) errors.push(`${where}/${chart.id}: interactive shift names unknown curve "${id}"`);
+    }
+  }
+}
+
+/** Shape checks for the share, scatter and matrix kinds and for category axes. */
+function checkKind(chart: ChartSpec, at: string, errors: string[]): void {
+  if (chart.kind === 'share') {
+    const sh = chart.share;
+    if (!sh?.parts?.length || !sh.bars?.length) return void errors.push(`${at}: a share chart needs "share" with parts and bars`);
+    for (const b of sh.bars) {
+      if (b.values.length !== sh.parts.length) errors.push(`${at}: bar "${b.label}" has ${b.values.length} values for ${sh.parts.length} parts`);
+      if (sh.unit === '%' && Math.abs(b.values.reduce((a, v) => a + v, 0) - 100) > 0.5) errors.push(`${at}: bar "${b.label}" does not add up to 100%`);
+    }
+  }
+  if (chart.kind === 'scatter') {
+    const sc = chart.scatter;
+    if (!sc?.points?.length) return void errors.push(`${at}: a scatter chart needs "scatter" with points`);
+    for (const p of sc.points) if ([p.x, p.y].some((v) => !(v >= 0 && v <= 10))) errors.push(`${at}: point "${p.label}" is outside 0–10`);
+  }
+  if (chart.kind === 'matrix') {
+    const cells = chart.matrix?.cells;
+    if (!(cells?.length === 2 && cells.every((r) => r.length === 2 && r.every((c) => c.text?.trim())))) errors.push(`${at}: a matrix chart needs 2×2 "cells" with text`);
+  }
+  if (chart.xCategories) {
+    const n = chart.xCategories.length;
+    for (const c of chart.curves ?? []) {
+      for (const [px] of c.points ?? []) if (!Number.isInteger(px) || px < 0 || px >= n) errors.push(`${at}: curve ${c.id} has x = ${px}, not a category index (0–${n - 1})`);
     }
   }
 }

@@ -3,6 +3,9 @@ import type { ChartSpec, Provenance, Rich as RichText } from '../content/types';
 import { Rich } from '../components/Inline';
 import { CircularFlow } from './CircularFlow';
 import { InteractiveChart } from './InteractiveChart';
+import { MatrixChart } from './MatrixChart';
+import { ScatterMap } from './ScatterMap';
+import { ShareBars } from './ShareBars';
 import { XYChart } from './XYChart';
 
 const PROVENANCE: Record<Provenance, string> = {
@@ -27,7 +30,7 @@ export function ChartFigure({ ids, caption }: { ids: string[]; caption: RichText
         {specs.map((spec) => (
           <div key={spec.id}>
             <p className="chart-title">{spec.title}</p>
-            {spec.kind === 'circular-flow' && spec.flow ? <CircularFlow flow={spec.flow} /> : spec.interactive ? <InteractiveChart spec={spec} /> : <XYChart spec={spec} />}
+            <ChartBody spec={spec} />
           </div>
         ))}
       </div>
@@ -37,4 +40,12 @@ export function ChartFigure({ ids, caption }: { ids: string[]; caption: RichText
       </figcaption>
     </figure>
   );
+}
+
+function ChartBody({ spec }: { spec: ChartSpec }) {
+  if (spec.kind === 'circular-flow' && spec.flow) return <CircularFlow flow={spec.flow} />;
+  if (spec.kind === 'share' && spec.share) return <ShareBars share={spec.share} />;
+  if (spec.kind === 'scatter' && spec.scatter) return <ScatterMap scatter={spec.scatter} xLabel={spec.xLabel} yLabel={spec.yLabel} />;
+  if (spec.kind === 'matrix' && spec.matrix) return <MatrixChart matrix={spec.matrix} xLabel={spec.xLabel} yLabel={spec.yLabel} />;
+  return spec.interactive ? <InteractiveChart spec={spec} /> : <XYChart spec={spec} />;
 }

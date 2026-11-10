@@ -195,6 +195,8 @@ code { font-family: var(--font-mono); font-size: 0.88em; color: var(--fg-strong)
 .credit-title { font-family: var(--font-display); font-weight: 600; color: var(--fg-strong); }
 
 /* ---------- Reading blocks ---------- */
+/* Long URLs (bibliographies, video links) wrap instead of widening the page. */
+.section p, .section li { overflow-wrap: anywhere; }
 h4 { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; color: var(--fg-strong); margin: 1.75rem 0 0.5rem; }
 .figure-note { margin: 1.25rem 0; padding: 0.75rem 1rem; border: 1px dashed var(--line); border-radius: 8px; font-size: var(--step--1); color: var(--muted); }
 .figure-label { font-family: var(--font-mono); color: var(--fg); }
